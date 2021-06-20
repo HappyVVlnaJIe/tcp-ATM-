@@ -1,67 +1,74 @@
-#include <sys/socket.h>
 #include <sys/types.h>
+#include <sys/socket.h>
 #include <netinet/in.h>
-#include <netdb.h>
-#include <stdio.h>
-#include <string.h>
-#include <stdlib.h>
-#include <unistd.h>
-#include <errno.h>
 #include <arpa/inet.h>
-#include <iostream>
+#include <stdio.h>
+#include <stdlib.h>
+#include <string.h>
+#include <unistd.h>
 #include <string>
+#include <iostream>
 
-int main(int argc, char *argv[]) {
-    int sockfd = 0, n = 0;
-    char recvBuff[1024], sendBuff[1025];
-    struct sockaddr_in serv_addr;
 
-    if(argc != 2) {
-        printf("\n Usage: %s <ip of server> \n",argv[0]);
-        return 1;
-    }
+int main(void) {
+	struct sockaddr_in stSockAddr;
+	int i32Res;
+	int i32SocketFD = socket(PF_INET, SOCK_STREAM, IPPROTO_TCP);
 
-    memset(recvBuff, '0',sizeof(recvBuff));
-    memset(sendBuff, '0', sizeof(sendBuff));
-    if((sockfd = socket(AF_INET, SOCK_STREAM, 0)) < 0)
-    {
-        printf("\n Error : Could not create socket \n");
-        return 1;
-    }
+	if (i32SocketFD == -1) {
+		perror("Ошибка: невозможно создать сокет");
+		return EXIT_FAILURE;
+	}
 
-    memset(&serv_addr, '0', sizeof(serv_addr));
+	memset(&stSockAddr, 0, sizeof (stSockAddr));
 
-    serv_addr.sin_family = AF_INET;
-    serv_addr.sin_port = htons(5000);
+	stSockAddr.sin_family = PF_INET;
+	stSockAddr.sin_port = htons(5000);
+	i32Res = inet_pton(PF_INET, "127.0.0.1", &stSockAddr.sin_addr);
 
-    if(inet_pton(AF_INET, argv[1], &serv_addr.sin_addr)<=0)
-    {
-        printf("\n inet_pton error occured\n");
-        return 1;
-    }
+	if (i32Res < 0) {
+		perror("Ошибка: первый параметр не относится к категории корректных адресов");
+		close(i32SocketFD);
+		return EXIT_FAILURE;
+	} else if (!i32Res) {
+		perror("Ошибка: второй параметр не содержит корректного IP-адреса");
+		close(i32SocketFD);
+		return EXIT_FAILURE;
+	}
 
-    if( connect(sockfd, (struct sockaddr *)&serv_addr, sizeof(serv_addr)) < 0)
-    {
-       printf("\n Error : Connect Failed \n");
-       return 1;
-    }
+	if (connect(i32SocketFD, (struct sockaddr*) &stSockAddr, sizeof (stSockAddr)) == -1) {
+		perror("Ошибка: соединения");
+		close(i32SocketFD);
+		return EXIT_FAILURE;
+	}
 
-    while (true) {
-        std::string comand;
+	/* выполнение операций чтения и записи ... */
+
+    char buff[1024];
+    memset(buff,'0',sizeof(buff));
+    int n=0; 
+    std::string comand;
+    while(true) {
         std::getline(std::cin, comand);
-        write(sockfd, comand.c_str(), comand.size());
-        while ( (n = read(sockfd, recvBuff, sizeof(recvBuff)-1)) > 0) {}
-        recvBuff[n] = 0;
-        if(fputs(recvBuff, stdout) == EOF)
+        snprintf(buff,sizeof(buff),"%s",comand.c_str());
+        write(i32SocketFD,buff,sizeof(buff));
+        std::cout<<"write done"<<std::endl;
+        while ( (n = read(i32SocketFD, buff, sizeof(buff)-1)) > 0)
         {
-            printf("\n Error : Fputs error\n");
+            buff[n] = 0;
+            if(fputs(buff, stdout) == EOF)
+            {
+                printf("\n Error : Fputs error\n");
+            }
+        }
+
+        if(n < 0)
+        {
+            printf("\n Read error \n");
         }
     }
+	shutdown(i32SocketFD, SHUT_RDWR);
 
-    if(n < 0)
-    {
-        printf("\n Read error \n");
-    }
-
-    return 0;
+	close(i32SocketFD);
+	return 0;
 }

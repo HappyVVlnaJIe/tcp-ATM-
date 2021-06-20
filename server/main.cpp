@@ -1,42 +1,55 @@
+#include <sys/types.h>
 #include <sys/socket.h>
 #include <netinet/in.h>
 #include <arpa/inet.h>
 #include <stdio.h>
 #include <stdlib.h>
-#include <unistd.h>
-#include <errno.h>
 #include <string.h>
-#include <sys/types.h>
-#include <time.h> 
+#include <unistd.h>
+#include <iostream>
 
-int main(int argc, char *argv[]) {
-    int listenfd = 0, connfd = 0;
-    struct sockaddr_in serv_addr;
+int main(void)
+{
+    char sendBuff[1025];
+    struct sockaddr_in sa;
+    int SocketFD = socket(PF_INET, SOCK_STREAM, IPPROTO_TCP);
+    if (SocketFD == -1) {
+      perror("cannot create socket");
+      exit(EXIT_FAILURE);
+    }
+  
+    memset(&sa, 0, sizeof sa);
+    memset(sendBuff, '0', sizeof(sendBuff));
 
-    char recvBuff[1024];
-    time_t ticks;
+    sa.sin_family = AF_INET;
+    sa.sin_port = htons(5000);
+    sa.sin_addr.s_addr = htonl(INADDR_ANY);
+  
+    if (bind(SocketFD,(struct sockaddr *)&sa, sizeof(sa)) == -1) {
+      perror("bind failed");
+      close(SocketFD);
+      exit(EXIT_FAILURE);
+    }
+  
+    if (listen(SocketFD, 10) == -1) {
+      perror("listen failed");
+      close(SocketFD);
+      exit(EXIT_FAILURE);
+    }
+  
+    while (true) {
+        int ConnectFD = accept(SocketFD, NULL, NULL);
 
-    listenfd = socket(AF_INET, SOCK_STREAM, 0);
-    memset(&serv_addr, '0', sizeof(serv_addr));
-    memset(recvBuff, '0', sizeof(recvBuff));
+        read(ConnectFD,sendBuff,sizeof(sendBuff));
+        std::cout<<sendBuff<<std::endl;
+        time_t ticks = time(NULL);
+        snprintf(sendBuff, sizeof(sendBuff), "%.24s\r\n", ctime(&ticks));
+        write(ConnectFD, sendBuff, strlen(sendBuff));
 
-    serv_addr.sin_family = AF_INET;
-    serv_addr.sin_addr.s_addr = htonl(INADDR_ANY);
-    serv_addr.sin_port = htons(5000);
-
-    bind(listenfd, (struct sockaddr*)&serv_addr, sizeof(serv_addr));
-
-    listen(listenfd, 10);
-
-    while(true) {
-        connfd = accept(listenfd, (struct sockaddr*)NULL, NULL);
-                                                                                                                                                                              
-        ticks = time(NULL);
-        //snprintf(sendBuff, sizeof(sendBuff), "%.24s\r\n", ctime(&ticks));
-        read(connfd,recvBuff, strlen(recvBuff));
-        write(connfd,recvBuff, strlen(recvBuff));
-
-        close(connfd);
+        close(ConnectFD);
         sleep(1);
-     }
+    }
+
+    close(SocketFD);
+    return EXIT_SUCCESS;  
 }
