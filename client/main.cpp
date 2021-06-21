@@ -48,7 +48,7 @@ int main(void) {
     memset(buff,'0',sizeof(buff));
     int n=0; 
     std::string comand;
-    while(true) {
+    while(true) {	
         std::getline(std::cin, comand);
         snprintf(buff,sizeof(buff),"%s",comand.c_str());
         write(i32SocketFD,buff,sizeof(buff));

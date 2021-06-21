@@ -11,10 +11,11 @@ enum class Request {
     add, //Пополнение средств на определённую сумму
     lock, //Блокировка карты 
     unlock, //Разблокировка карты
-    help //список команд
+    help, //список команд
+    logout //выход
 };
 
-const std::map<std::string, Request> request_translate = {
+static std::map<std::string, Request> request_translate = {
     {"login", Request::login},
     {"status", Request::status},
     {"withdrawal", Request::withdrawal},
