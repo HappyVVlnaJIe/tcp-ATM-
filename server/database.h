@@ -22,13 +22,14 @@ static std::map<std::string, Request> request_translate = {
     {"add", Request::add},
     {"lock", Request::lock},
     {"unlock", Request::unlock},
-    {"help", Request::help},
+    //{"help", Request::help},
+    {"logout", Request::logout},
 };
 
 struct User
 {
-    uint16_t pin; //сделать конст
-    int balance;
+    uint16_t pin; //сделать конст, emplace
+    int balance, index;
     bool card_blocked;
     /* data */
 };
@@ -38,15 +39,16 @@ public:
     Database(std::string cash_machine_users_path);
     bool Login(int card_number, uint16_t pin);
     int Status(int card_number);
-    std::string Withdrawal(int card_number, int funds);
-    std::string Add(int card_number, int funds);
-    std::string Lock(int card_number);
-    std::string Unlock(int card_number);
-    std::vector<std::string> Help();
-    void WriteChanges();//убрать в private
+    void Withdrawal(int card_number, int funds);
+    void Add(int card_number, int funds);
+    void Lock(int card_number);
+    void Unlock(int card_number);
+    //std::vector<std::string> Help();
+    void WriteChanges(int index);//убрать в private
 private:
     std::map<int, User> users;
     std::string _cash_machine_users_path;
 };
 
+std::ostream& operator<<(std::ostream& os, const User& user);
 //как записывать изменения? не переписывать же весь файл

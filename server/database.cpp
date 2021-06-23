@@ -7,7 +7,7 @@ Database::Database(std::string cash_machine_users_path) {
     std::ifstream ifs(_cash_machine_users_path);
     if (ifs.is_open()) {
         int card_number;
-        while(ifs>>card_number>>users[card_number].pin>>users[card_number].balance) {
+        while(ifs>>card_number>>users[card_number].pin>>users[card_number].balance) { //переопределить ввод и вывод, в воде индекс добавить
             
         }
     }
@@ -15,7 +15,7 @@ Database::Database(std::string cash_machine_users_path) {
 }
 
 void Database::WriteChanges() {
-    std::ofstream ofs(_cash_machine_users_path);
+    std::ofstream ofs(_cash_machine_users_path);//сохранять индекс и переписывать только 1 строку
     if (ofs.is_open()) {
         for (const auto& [card_number, user] : users) {
             ofs<<card_number<<' '<<user.pin<<' '<<user.balance<<' '<<user.card_blocked<<std::endl;
@@ -24,7 +24,7 @@ void Database::WriteChanges() {
     ofs.close();
 }
 
-bool Database::Login(int card_number, uint16_t pin) {
+bool Database::Login(int card_number, uint16_t pin){
     if (users.find(card_number)==users.end()) {
         return false;                               //мб лучше throw?
     }
@@ -38,7 +38,7 @@ int Database::Status(int card_number){
     return users[card_number].balance;
 };
 
-std::string Database::Withdrawal(int card_number, int funds){
+void Database::Withdrawal(int card_number, int funds){
     if (users[card_number].card_blocked) {
         return "the card is blocked";
     }
@@ -76,7 +76,7 @@ std::string Database::Unlock(int card_number){
     this->WriteChanges();
     return "card is unblocked";
 };
-
+/*
 std::vector<std::string> Database::Help() {
     return {
         "login - User authorization by card number and pin code",
@@ -86,4 +86,4 @@ std::vector<std::string> Database::Help() {
         "lock - Lock the card",
         "unlock - Unlock the card",
         };
-};
+};*/

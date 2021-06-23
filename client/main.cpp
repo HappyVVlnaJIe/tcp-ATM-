@@ -9,66 +9,37 @@
 #include <string>
 #include <iostream>
 
+#define DEFAULT_PORT 5000
+#define BUFFER_SIZE 1024
+#define SERVER_IP "127.0.0.1"
 
-int main(void) {
-	struct sockaddr_in stSockAddr;
-	int i32Res;
-	int i32SocketFD = socket(PF_INET, SOCK_STREAM, IPPROTO_TCP);
+int main(int argc, const char* argv) {
+    int client;
+    struct sockaddr_in server_address;
+    client = socket(AF_INET,SOCK_STREAM,0);
 
-	if (i32SocketFD == -1) {
-		perror("Ошибка: невозможно создать сокет");
-		return EXIT_FAILURE;
-	}
+    server_address.sin_family = AF_INET;
+    server_address.sin_port = htons(DEFAULT_PORT);
+    inet_pton(AF_INET,SERVER_IP,&server_address.sin_addr);
 
-	memset(&stSockAddr, 0, sizeof (stSockAddr));
-
-	stSockAddr.sin_family = PF_INET;
-	stSockAddr.sin_port = htons(5000);
-	i32Res = inet_pton(PF_INET, "127.0.0.1", &stSockAddr.sin_addr);
-
-	if (i32Res < 0) {
-		perror("Ошибка: первый параметр не относится к категории корректных адресов");
-		close(i32SocketFD);
-		return EXIT_FAILURE;
-	} else if (!i32Res) {
-		perror("Ошибка: второй параметр не содержит корректного IP-адреса");
-		close(i32SocketFD);
-		return EXIT_FAILURE;
-	}
-
-	if (connect(i32SocketFD, (struct sockaddr*) &stSockAddr, sizeof (stSockAddr)) == -1) {
-		perror("Ошибка: соединения");
-		close(i32SocketFD);
-		return EXIT_FAILURE;
-	}
-
-	/* выполнение операций чтения и записи ... */
-
-    char buff[1024];
-    memset(buff,'0',sizeof(buff));
-    int n=0; 
-    std::string comand;
-    while(true) {	
-        std::getline(std::cin, comand);
-        snprintf(buff,sizeof(buff),"%s",comand.c_str());
-        write(i32SocketFD,buff,sizeof(buff));
-        std::cout<<"write done"<<std::endl;
-        while ( (n = read(i32SocketFD, buff, sizeof(buff)-1)) > 0)
-        {
-            buff[n] = 0;
-            if(fputs(buff, stdout) == EOF)
-            {
-                printf("\n Error : Fputs error\n");
-            }
-        }
-
-        if(n < 0)
-        {
-            printf("\n Read error \n");
-        }
+    int ret=connect(client, (struct sockaddr *)&server_address, sizeof(server_address));
+    if (ret==0) {
+        std::cout<<"Connection to server: "
+            <<inet_ntoa(server_address.sin_addr)
+            <<"Port: "<<DEFAULT_PORT<<std::endl;
     }
-	shutdown(i32SocketFD, SHUT_RDWR);
 
-	close(i32SocketFD);
+    char buffer[BUFFER_SIZE];
+    std::cout<<"Waiting for server..."<<std::endl;
+    recv(client,buffer,BUFFER_SIZE,0);
+    std::cout<<"Connection established"<<std::endl;
+    std::cout<<buffer<<std::endl;
+    while(true) {
+        std::cin.getline(buffer,BUFFER_SIZE);
+        send(client, buffer,BUFFER_SIZE,0);
+        recv(client,buffer,BUFFER_SIZE,0);
+        std::cout<<buffer<<std::endl;
+    }
+
 	return 0;
 }
