@@ -3,6 +3,7 @@
 #include <map>
 #include <vector>
 #include <fstream>
+#include "errors.h"
 
 enum class Request {
     login, //Авторизация пользователя по номеру карты и пин коду
@@ -11,7 +12,7 @@ enum class Request {
     add, //Пополнение средств на определённую сумму
     lock, //Блокировка карты 
     unlock, //Разблокировка карты
-    help, //список команд
+    //help, //список команд
     logout //выход
 };
 
@@ -28,6 +29,7 @@ static std::map<std::string, Request> request_translate = {
 
 struct User
 {
+    //User(uint16_t pin, int balance, int index, bool card_blocked=false);
     uint16_t pin; //сделать конст, emplace
     int balance, index;
     bool card_blocked;
@@ -51,4 +53,7 @@ private:
 };
 
 std::ostream& operator<<(std::ostream& os, const User& user);
+
+
+std::istream& operator>>(std::istream& os, const User& user);
 //как записывать изменения? не переписывать же весь файл

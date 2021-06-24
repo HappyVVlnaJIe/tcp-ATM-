@@ -1,16 +1,8 @@
-#include <sys/types.h>
-#include <sys/socket.h>
-#include <netinet/in.h>
-#include <arpa/inet.h>
-#include <stdio.h>
-#include <stdlib.h>
-#include <string.h>
-#include <unistd.h>
-#include <iostream>
-#include "database.h"
-#include <cstring>
-#include <sstream> 
-#include <thread>  
+#pragma once
+
+#include <string>
+#include <iostream> 
+#include <vector>
 
 struct Client {
     Client(int descriptor);
@@ -29,4 +21,5 @@ public:
 private:
     int socketFD, buffer_size;
     std::vector<Client> clients;
-}
+};
+

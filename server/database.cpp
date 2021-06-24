@@ -2,25 +2,37 @@
 
 //Server::Server(std::string cash_machine_users_path) : _cash_machine_users_path(cash_machine_users_path) {}
 
+std::ostream& operator<<(std::ostream& os, const User& user) {
+    os<<user.pin<<" "<<user.balance<<" "<<user.card_blocked<<std::endl;
+    return os;
+}
+
+std::istream& operator>>(std::istream& os, User& user) {
+    os>>user.pin>>user.balance>>user.card_blocked;
+    return os;
+}
+
+//User::User(uint16_t pin, int balance, int index, bool card_blocked) : pin(pin), balance(balance), index(index), card_blocked(card_blocked) {};
+
+
+
 Database::Database(std::string cash_machine_users_path) {
     _cash_machine_users_path = cash_machine_users_path;
     std::ifstream ifs(_cash_machine_users_path);
     if (ifs.is_open()) {
         int card_number;
-        while(ifs>>card_number>>users[card_number].pin>>users[card_number].balance) { //переопределить ввод и вывод, в воде индекс добавить
-            
+        int position=ifs.tellg();
+        while(ifs>>card_number>>users[card_number]) { 
+            users[card_number].index=position;
+            position=ifs.tellg();
         }
     }
     ifs.close();
 }
 
-void Database::WriteChanges() {
+void Database::WriteChanges(int card_number) {
     std::ofstream ofs(_cash_machine_users_path);//сохранять индекс и переписывать только 1 строку
-    if (ofs.is_open()) {
-        for (const auto& [card_number, user] : users) {
-            ofs<<card_number<<' '<<user.pin<<' '<<user.balance<<' '<<user.card_blocked<<std::endl;
-        }
-    }
+    
     ofs.close();
 }
 
@@ -40,41 +52,37 @@ int Database::Status(int card_number){
 
 void Database::Withdrawal(int card_number, int funds){
     if (users[card_number].card_blocked) {
-        return "the card is blocked";
+        throw BlockedCardError();
     }
     if (funds>users[card_number].balance) {
-        return "there are not enough funds on the card";
+        throw LowBalanceError();
     }
     users[card_number].balance-=funds;
-    this->WriteChanges();
-    return "funds were debited";
+    this->WriteChanges(card_number);
 };
 
-std::string Database::Add(int card_number, int funds){
+void Database::Add(int card_number, int funds){
     if (users[card_number].card_blocked) {
-        return "the card is blocked";
+        throw BlockedCardError();
     }
     users[card_number].balance+=funds;
-    this->WriteChanges();
-    return "your balance is replenished";
+    this->WriteChanges(card_number);
 };
 
-std::string Database::Lock(int card_number){
+void Database::Lock(int card_number){
     if (users[card_number].card_blocked) {
-        return "the card is already blocked ";
+        throw BlockedCardError();
     }
     users[card_number].card_blocked=true;
-    this->WriteChanges();
-    return "card is blocked";
+    this->WriteChanges(card_number);
 };
 
-std::string Database::Unlock(int card_number){
+void Database::Unlock(int card_number){
     if (!users[card_number].card_blocked) {
-        return "the card is already unblocked";
+        throw UnblockedCardError();
     }
     users[card_number].card_blocked=false;
-    this->WriteChanges();
-    return "card is unblocked";
+    this->WriteChanges(card_number);
 };
 /*
 std::vector<std::string> Database::Help() {

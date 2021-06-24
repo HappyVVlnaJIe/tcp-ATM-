@@ -1,4 +1,11 @@
 #include "server.h"
+#include <sys/types.h>
+#include <sys/socket.h>
+#include <netinet/in.h>
+#include <arpa/inet.h>
+#include <unistd.h>
+#include <thread> 
+
 
 Client::Client(int descriptor) : descriptor(descriptor){} 
 
@@ -51,10 +58,23 @@ void Server::Start() {
         if (descriptor>=0) {
             clients.push_back(Client(descriptor));
         }
-        for (auto& client : clients) {
+        for (int i=0;i<clients.size();i++) {
+            auto& client = clients[i];
             std::string message=this->Recv(client.descriptor);
             if (message!="") {
-                this->Send(this->ProcessRequest(message, client), client.descriptor);
+                try
+                {
+                    message=this->ProcessRequest(message, client);
+                    this->Send(message, client.descriptor);
+                    if (message=="Goodbye") {
+                        close(client.descriptor);
+                        clients.erase(clients.begin()+i);
+                    }
+                }
+                catch(const std::exception& e)
+                {
+                    this->Send(e.what(), client.descriptor);
+                }
             }
         }
         std::this_thread::yield();
