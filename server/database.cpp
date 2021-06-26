@@ -1,9 +1,10 @@
 #include "database.h"
 
+
 //Server::Server(std::string cash_machine_users_path) : _cash_machine_users_path(cash_machine_users_path) {}
 
 std::ostream& operator<<(std::ostream& os, const User& user) {
-    os<<user.pin<<" "<<user.balance<<" "<<user.card_blocked<<std::endl;
+    os<<user.pin<<" "<<user.balance<<" "<<user.card_blocked;
     return os;
 }
 
@@ -16,15 +17,17 @@ std::istream& operator>>(std::istream& os, User& user) {
 
 
 
-Database::Database(std::string cash_machine_users_path) {
-    _cash_machine_users_path = cash_machine_users_path;
+Database::Database(std::string cash_machine_users_path) : _cash_machine_users_path(cash_machine_users_path) {
     std::ifstream ifs(_cash_machine_users_path);
+    //std::cout<<_cash_machine_users_path<<std::endl;
     if (ifs.is_open()) {
         int card_number;
-        int position=ifs.tellg();
-        while(ifs>>card_number>>users[card_number]) { 
-            users[card_number].index=position;
-            position=ifs.tellg();
+        int position=0;
+        //std::cout<<"file open"<<std::endl;
+        while(ifs>>card_number>>users[card_number]) {
+            //std::cout<<card_number<<" "<<users[card_number]; 
+            users[card_number].line_index=position;
+            position++;
         }
     }
     ifs.close();
@@ -32,13 +35,19 @@ Database::Database(std::string cash_machine_users_path) {
 
 void Database::WriteChanges(int card_number) {
     std::ofstream ofs(_cash_machine_users_path);//сохранять индекс и переписывать только 1 строку
-    
+    /*int user_line_index = users[card_number].line_index;
+    for (int curr_line_index = 0; curr_line_index < user_line_index; ++curr_line_index){
+        ofs.ignore(std::numeric_limits<std::streamsize>::max(), ofs.widen('\n')); 
+    }*/
+    for (const auto& user : users) {
+        ofs<<user.first<<" "<<user.second<<std::endl;
+    }
     ofs.close();
 }
 
 bool Database::Login(int card_number, uint16_t pin){
     if (users.find(card_number)==users.end()) {
-        return false;                               //мб лучше throw?
+        return false;                               
     }
     if (users[card_number].pin!=pin) {
         return false;
@@ -51,6 +60,7 @@ int Database::Status(int card_number){
 };
 
 void Database::Withdrawal(int card_number, int funds){
+    //std::cout<<"Withdrawal"<<std::endl;
     if (users[card_number].card_blocked) {
         throw BlockedCardError();
     }
@@ -58,6 +68,7 @@ void Database::Withdrawal(int card_number, int funds){
         throw LowBalanceError();
     }
     users[card_number].balance-=funds;
+    //std::cout<<"WriteChanges"<<std::endl;
     this->WriteChanges(card_number);
 };
 

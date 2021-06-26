@@ -17,8 +17,9 @@ public:
     void Start();
     int Send(std::string message, int descriptor);
     std::string Recv(int descriptor);
-    virtual std::string ProcessRequest(std::string message, Client& client);
+    virtual std::string ProcessRequest(std::string message, Client& client)=0;
 private:
+    //struct sockaddr_in server_address;
     int socketFD, buffer_size;
     std::vector<Client> clients;
 };

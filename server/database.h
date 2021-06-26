@@ -4,6 +4,7 @@
 #include <vector>
 #include <fstream>
 #include "errors.h"
+#include <iostream>
 
 enum class Request {
     login, //Авторизация пользователя по номеру карты и пин коду
@@ -31,7 +32,7 @@ struct User
 {
     //User(uint16_t pin, int balance, int index, bool card_blocked=false);
     uint16_t pin; //сделать конст, emplace
-    int balance, index;
+    int balance, line_index;
     bool card_blocked;
     /* data */
 };

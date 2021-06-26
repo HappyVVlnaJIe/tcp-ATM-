@@ -4,8 +4,9 @@
 #include "database.h"
 
 class ATM:public Server {
+public:
     ATM(std::string cash_machine_users_path, int port=5000, int buffer_size=1024);
-    std::string ProcessRequest(std::string message, Client& client) override;
 private:
+    std::string ProcessRequest(std::string message, Client& client) override;
     Database db;
 };
