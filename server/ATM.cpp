@@ -68,27 +68,31 @@ std::string ATM::ProcessRequest(std::string message, Client& client) {
     std::istringstream str_stream(message);
     std::string command;
     str_stream>>command;  
-
-    if (request_translate.find(command)==request_translate.end()) {
+    auto it = request_translate.find(command);
+    if (it==request_translate.end()) {
         throw WrongCommandError();
-    }
-    
-    Request current_request = request_translate[command];
-
+    }   
+    Request current_request=it->second;
     if (current_request==Request::logout) {
         return ServerMessage(Message::DISCONNECTED);
     }
 
-    if (!client.is_login&&current_request!=Request::login) {
-        return ServerMessage(Message::NOT_LOG_IN);
+    if (current_request==Request::help) {
+        return db.Help();
     }
 
     if (!client.is_login) {
-        return this->Login(str_stream, client);
+        if (current_request==Request::login) {
+            return this->Login(str_stream, client);
+        }
+        else {
+            return ServerMessage(Message::NOT_LOG_IN);
+        }
     }
-
-    if (client.is_login&&current_request==Request::login) {
-        return ServerMessage(Message::ALREADY_LOG_IN);
+    else {
+        if (current_request==Request::login) {
+            return ServerMessage(Message::ALREADY_LOG_IN);
+        }
     }
 
     return (this->*requests_function[current_request])(str_stream, client.card_number);

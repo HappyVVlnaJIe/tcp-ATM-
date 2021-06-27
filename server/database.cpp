@@ -10,25 +10,18 @@ std::istream& operator>>(std::istream& os, User& user) {
     return os;
 }
 
-Database::Database(std::string cash_machine_users_path) : _cash_machine_users_path(cash_machine_users_path) {
-    std::ifstream ifs(_cash_machine_users_path);
+Database::Database(const std::string& cash_machine_users_path) : cash_machine_users_path(cash_machine_users_path) {
+    std::ifstream ifs(cash_machine_users_path);
     if (ifs.is_open()) {
         int card_number;
         int position=0;
-        while(ifs>>card_number>>users[card_number]) {
-            users[card_number].line_index=position;
-            position++;
-        }
+        while(ifs>>card_number>>users[card_number]) {}
     }
     ifs.close();
 }
 
 void Database::WriteChanges(int card_number) {
-    std::ofstream ofs(_cash_machine_users_path);                //сохранять индекс и переписывать только 1 строку
-    /*int user_line_index = users[card_number].line_index;
-    for (int curr_line_index = 0; curr_line_index < user_line_index; ++curr_line_index){
-        ofs.ignore(std::numeric_limits<std::streamsize>::max(), ofs.widen('\n')); 
-    }*/
+    std::ofstream ofs(cash_machine_users_path);                
     for (const auto& user : users) {
         ofs<<user.first<<" "<<user.second<<std::endl;
     }
@@ -36,21 +29,15 @@ void Database::WriteChanges(int card_number) {
 }
 
 bool Database::Login(int card_number, uint16_t pin){
-    if (users.find(card_number)==users.end()) {
-        return false;                               
-    }
-    if (users[card_number].pin!=pin) {
-        return false;
-    }
-    return true;
-}; 
+    auto it=users.find(card_number);
+    return it!=users.end()&&it->second.pin==pin;
+} 
 
 int Database::Status(int card_number){
-    return users[card_number].balance;
-};
+    return users.at(card_number).balance;
+}
 
 void Database::Withdrawal(int card_number, int funds){
-    //std::cout<<"Withdrawal"<<std::endl;
     if (users[card_number].card_blocked) {
         throw BlockedCardError();
     }
@@ -58,9 +45,8 @@ void Database::Withdrawal(int card_number, int funds){
         throw LowBalanceError();
     }
     users[card_number].balance-=funds;
-    //std::cout<<"WriteChanges"<<std::endl;
     this->WriteChanges(card_number);
-};
+}
 
 void Database::Add(int card_number, int funds){
     if (users[card_number].card_blocked) {
@@ -68,7 +54,7 @@ void Database::Add(int card_number, int funds){
     }
     users[card_number].balance+=funds;
     this->WriteChanges(card_number);
-};
+}
 
 void Database::Lock(int card_number){
     if (users[card_number].card_blocked) {
@@ -76,7 +62,7 @@ void Database::Lock(int card_number){
     }
     users[card_number].card_blocked=true;
     this->WriteChanges(card_number);
-};
+}
 
 void Database::Unlock(int card_number){
     if (!users[card_number].card_blocked) {
@@ -85,14 +71,13 @@ void Database::Unlock(int card_number){
     users[card_number].card_blocked=false;
     this->WriteChanges(card_number);
 };
-/*
-std::vector<std::string> Database::Help() {
-    return {
-        "login - User authorization by card number and pin code",
-        "status - Status of the card balance",
-        "withdrawal 'number'- Withdraw funds from the card",
-        "add 'number'- Replenishment of the card for a certain amount",
-        "lock - Lock the card",
-        "unlock - Unlock the card",
-        };
-};*/
+
+std::string Database::Help() {
+    return 
+        "login 'card number' 'pin'- User authorization by card number and pin code\n"
+        "status - Status of the card balance\n"
+        "remove 'number'- Withdraw funds from the card\n"
+        "add 'number'- Replenishment of the card for a certain amount\n"
+        "lock - Lock the card\n"
+        "unlock - Unlock the card\n";
+}

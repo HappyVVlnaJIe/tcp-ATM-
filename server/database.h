@@ -13,7 +13,7 @@ enum class Request {
     add, //Пополнение средств на определённую сумму
     lock, //Блокировка карты 
     unlock, //Разблокировка карты
-    //help, //список команд
+    help, //список команд
     logout //выход
 };
 
@@ -24,37 +24,35 @@ static std::map<std::string, Request> request_translate = {
     {"add", Request::add},
     {"lock", Request::lock},
     {"unlock", Request::unlock},
-    //{"help", Request::help},
+    {"help", Request::help},
     {"logout", Request::logout},
 };
 
 struct User
 {
     uint16_t pin; 
-    int balance, line_index;
+    int balance;
     bool card_blocked;
-    /* data */
 };
 
 class Database {
 public:
-    Database(std::string cash_machine_users_path);
+    Database(const std::string& cash_machine_users_path);
     bool Login(int card_number, uint16_t pin);
     int Status(int card_number);
     void Withdrawal(int card_number, int funds);
     void Add(int card_number, int funds);
     void Lock(int card_number);
     void Unlock(int card_number);
-    //std::vector<std::string> Help();
-//убрать в private
+    std::string Help();
+
 private:
     void WriteChanges(int index);
     std::map<int, User> users;
-    std::string _cash_machine_users_path;
+    std::string cash_machine_users_path;
 };
 
 std::ostream& operator<<(std::ostream& os, const User& user);
 
 
-std::istream& operator>>(std::istream& os, const User& user);
-//как записывать изменения? не переписывать же весь файл
+std::istream& operator>>(std::istream& os, User& user);

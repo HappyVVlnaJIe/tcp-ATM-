@@ -2,12 +2,13 @@
 
 #include <string>
 #include <iostream> 
-#include <vector>
+#include <list>
 #include <set>
 #include <map>
+#include "errors.h"
 
 enum class Message {
-    CONECTED,
+    CONNECTED,
     DISCONNECTED,
     NOT_LOG_IN,
     ALREADY_CONNECTED,
@@ -18,7 +19,8 @@ enum class Message {
 struct Client {
     Client(int descriptor);
     Client()=default;
-    uint32_t card_number, descriptor;
+    uint32_t card_number;
+    int descriptor;
     bool is_login;
 };
 
@@ -26,16 +28,16 @@ class Server {
 public:
     Server(int port=5000, int buffer_size=1024);
     void Start();
-    int Send(std::string message, int descriptor);
-    std::string Recv(int descriptor);
     virtual std::string ProcessRequest(std::string message, Client& client)=0;
     bool AddActiveCard(int card_number);
     void SetMessage();
     std::string ServerMessage(Message message);
 private:
-    //struct sockaddr_in server_address;
+    void AddClient();
+    int Send(std::string message, int descriptor);
+    std::string Recv(int descriptor);
     int socketFD, buffer_size;
-    std::vector<Client> clients;
+    std::list<Client> clients;
     std::set<int> active_cards;
     std::map<Message, std::string> server_message;
 };
