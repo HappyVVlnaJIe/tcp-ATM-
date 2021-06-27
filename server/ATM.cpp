@@ -13,10 +13,10 @@ std::pair<Request, std::vector<int>> ParseComand(std::string message) {
 
     std::pair<Request, std::vector<int>> result;
     result.first = request_translate[command];      
-    int card_number=0, funds=0;  //сделать card_number uint32_t, funds сделать некое ограничение? как проверять тогда его?
+    uint32_t card_number=0, funds=0;  //сделать card_number uint32_t, funds сделать некое ограничение? как проверять тогда его?
     uint16_t pin=0;
 
-    switch (result.first)
+    switch (result.first) //изменить на мапу 
     {
     case Request::add:
         str_stream>>funds;
@@ -47,7 +47,7 @@ std::pair<Request, std::vector<int>> ParseComand(std::string message) {
     case Request::unlock:
         break;
 
-    case Request::withdrawal:
+    case Request::remove:
         str_stream>>funds;
         if (funds==0) {
             throw WrongCommandFormatError();
@@ -62,8 +62,11 @@ ATM::ATM(std::string cash_machine_users_path, int port, int buffer_size) : Serve
 
 std::string ATM::ProcessRequest(std::string message, Client& client) {
     std::pair<Request, std::vector<int>> request_data = ParseComand(message);
+    if (request_data.first==Request::logout) {
+        return ServerMessage(Message::DISCONNECTED);
+    }
     if (!client.is_login&&request_data.first!=Request::login) {
-        return "You need to log in";
+        return ServerMessage(Message::NOT_LOG_IN);
     }
 
     if (!client.is_login) {
@@ -71,17 +74,20 @@ std::string ATM::ProcessRequest(std::string message, Client& client) {
         uint16_t pin = request_data.second[1];
         //std::cout<<"card_number="<<card_number<<" ,pin="<<pin<<std::endl;
         if (db.Login(card_number, pin)) {
+            if (!AddActiveCard(card_number)) {
+                return ServerMessage(Message::ALREADY_CONNECTED);
+            }
             client.card_number=card_number;
             client.is_login=true;
-            return "Complete";
+            return ServerMessage(Message::COMPLETE);
         }
         else {
-            return "Wrong card number or pin";
+            throw WrongCardOrPinError();
         }
     }
 
     if (request_data.first==Request::login&&client.is_login) {
-        return "You are already logged in";
+        return ServerMessage(Message::ALREADY_LOG_IN);
     }
 
     switch (request_data.first)
@@ -101,11 +107,11 @@ std::string ATM::ProcessRequest(std::string message, Client& client) {
     case Request::unlock:
         db.Unlock(client.card_number);
         break;
-    case Request::withdrawal:
+    case Request::remove:
         //std::cout<<"card_number="<<client.card_number<<" ,funds="<<request_data.second.size()<<std::endl;
         db.Withdrawal(client.card_number, request_data.second[0]);
         break;
     }
 
-    return "Complete";
+    return ServerMessage(Message::COMPLETE);
 }

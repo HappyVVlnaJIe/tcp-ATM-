@@ -32,3 +32,9 @@ public:
     WrongCommandFormatError(): std::runtime_error{"wrong command format"}{};
     //const char* what() const noexcept {return "wrong command format";}
 };
+
+class WrongCardOrPinError : public std::runtime_error {
+public:
+    WrongCardOrPinError(): std::runtime_error{"Wrong card number or pin"}{};
+    //const char* what() const noexcept {return "wrong command format";}
+};

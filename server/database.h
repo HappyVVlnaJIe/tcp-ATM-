@@ -9,7 +9,7 @@
 enum class Request {
     login, //Авторизация пользователя по номеру карты и пин коду
     status, //Запрос состояния счёта пользователя
-    withdrawal, //Запрос на снятие средств со счёта
+    remove, //Запрос на снятие средств со счёта
     add, //Пополнение средств на определённую сумму
     lock, //Блокировка карты 
     unlock, //Разблокировка карты
@@ -20,7 +20,7 @@ enum class Request {
 static std::map<std::string, Request> request_translate = {
     {"login", Request::login},
     {"status", Request::status},
-    {"withdrawal", Request::withdrawal},
+    {"remove", Request::remove},
     {"add", Request::add},
     {"lock", Request::lock},
     {"unlock", Request::unlock},
@@ -30,8 +30,7 @@ static std::map<std::string, Request> request_translate = {
 
 struct User
 {
-    //User(uint16_t pin, int balance, int index, bool card_blocked=false);
-    uint16_t pin; //сделать конст, emplace
+    uint16_t pin; 
     int balance, line_index;
     bool card_blocked;
     /* data */
@@ -47,8 +46,9 @@ public:
     void Lock(int card_number);
     void Unlock(int card_number);
     //std::vector<std::string> Help();
-    void WriteChanges(int index);//убрать в private
+//убрать в private
 private:
+    void WriteChanges(int index);
     std::map<int, User> users;
     std::string _cash_machine_users_path;
 };

@@ -1,8 +1,5 @@
 #include "database.h"
 
-
-//Server::Server(std::string cash_machine_users_path) : _cash_machine_users_path(cash_machine_users_path) {}
-
 std::ostream& operator<<(std::ostream& os, const User& user) {
     os<<user.pin<<" "<<user.balance<<" "<<user.card_blocked;
     return os;
@@ -13,19 +10,12 @@ std::istream& operator>>(std::istream& os, User& user) {
     return os;
 }
 
-//User::User(uint16_t pin, int balance, int index, bool card_blocked) : pin(pin), balance(balance), index(index), card_blocked(card_blocked) {};
-
-
-
 Database::Database(std::string cash_machine_users_path) : _cash_machine_users_path(cash_machine_users_path) {
     std::ifstream ifs(_cash_machine_users_path);
-    //std::cout<<_cash_machine_users_path<<std::endl;
     if (ifs.is_open()) {
         int card_number;
         int position=0;
-        //std::cout<<"file open"<<std::endl;
         while(ifs>>card_number>>users[card_number]) {
-            //std::cout<<card_number<<" "<<users[card_number]; 
             users[card_number].line_index=position;
             position++;
         }
@@ -34,7 +24,7 @@ Database::Database(std::string cash_machine_users_path) : _cash_machine_users_pa
 }
 
 void Database::WriteChanges(int card_number) {
-    std::ofstream ofs(_cash_machine_users_path);//сохранять индекс и переписывать только 1 строку
+    std::ofstream ofs(_cash_machine_users_path);                //сохранять индекс и переписывать только 1 строку
     /*int user_line_index = users[card_number].line_index;
     for (int curr_line_index = 0; curr_line_index < user_line_index; ++curr_line_index){
         ofs.ignore(std::numeric_limits<std::streamsize>::max(), ofs.widen('\n')); 

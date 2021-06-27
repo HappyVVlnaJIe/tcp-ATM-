@@ -7,12 +7,25 @@
 #include <thread> 
 #include <errno.h>
 
-#define SERVER_CONECTED "Server conected"
-
-
 Client::Client(int descriptor) : descriptor(descriptor){} 
 
+std::string Server::ServerMessage(Message message) {
+    return server_message[message];
+}
+
+void Server::SetMessage() {
+    server_message = {
+        {Message::CONECTED, "Server conected"},
+        {Message::DISCONNECTED, "Goodbye"},
+        {Message::NOT_LOG_IN, "You need to log in"},
+        {Message::ALREADY_CONNECTED, "You are already connected"},
+        {Message::COMPLETE, "Complete"},
+        {Message::ALREADY_LOG_IN, "You are already logged in"},
+    };
+}
+
 Server::Server(int port, int buffer_size) {
+    this->SetMessage();
     this->buffer_size=buffer_size;
     struct sockaddr_in server_address;
     socketFD = socket(AF_INET, SOCK_STREAM|SOCK_NONBLOCK, 0);
@@ -42,20 +55,18 @@ Server::Server(int port, int buffer_size) {
 std::string Server::Recv(int descriptor) {
     std::string message="";
     char buffer[buffer_size]; 
-    //std::cout<<"descriptor="<<descriptor<<std::endl;
     int n;
     while((n=recv(descriptor,buffer,buffer_size,MSG_DONTWAIT))>=0){
         message+=buffer;
-        //std::cout<<"message="<<message<<" ,buffer="<<buffer<<std::endl;
-        //std::cout<<errno<<std::endl;
-        //std::cout<<n<<std::endl;
     }
-    //std::cout<<"message="<<message<<std::endl;
     return message;
 }
 
+bool Server::AddActiveCard(int card_number) {
+    return active_cards.insert(card_number).second;
+}
+
 int Server::Send(std::string message, int descriptor) {
-    //std::cout<<"message="<<message<<" descriptor="<<descriptor<<std::endl;
     return send(descriptor,message.c_str(),message.size(),0);
 }
 
@@ -64,18 +75,24 @@ void Server::Start() {
     while(true) {
         if (clients.size()==0) {
             Client client;
-            while((client.descriptor=accept(socketFD,NULL,NULL))<0){};                  //обработать "отключение клиента без команды"
-            this->Send(SERVER_CONECTED, client.descriptor);
+            while((client.descriptor=accept(socketFD,NULL,NULL))<0){};                  
+            this->Send(ServerMessage(Message::CONECTED), client.descriptor);
             clients.push_back(client);
         }
         int descriptor=-1;
         descriptor=accept(socketFD,NULL,NULL);
         if (descriptor>0) {
             clients.emplace_back(descriptor);
-            this->Send(SERVER_CONECTED, descriptor);
+            this->Send(ServerMessage(Message::CONECTED), descriptor);
         }
         for (int i=0;i<clients.size();i++) {
             auto& client = clients[i];
+            if (client.descriptor<0) {
+                close(client.descriptor);
+                active_cards.erase(client.card_number);
+                clients.erase(clients.begin()+i);
+                continue;
+            }
             std::string message=this->Recv(client.descriptor);
             if (message!="") {
                 try
@@ -83,8 +100,9 @@ void Server::Start() {
                     message=this->ProcessRequest(message, client);
                     //std::cout<<"Proccess request "<<message<<std::endl;
                     this->Send(message, client.descriptor);
-                    if (message=="Goodbye") {
+                    if (message==ServerMessage(Message::DISCONNECTED)) {
                         close(client.descriptor);
+                        active_cards.erase(client.card_number);
                         clients.erase(clients.begin()+i);
                     }
                 }
