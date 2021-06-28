@@ -55,10 +55,9 @@ void Client::Start()
     {
         memset(buffer,0,buffer_size);
         std::cin.getline(buffer,buffer_size);
-        Send(buffer, socketFD); //проверить переполнение буфера
+        Send(buffer, socketFD); 
         memset(buffer,0,buffer_size);
         std::cout<<std::endl<<Recv(socketFD)<<std::endl<<std::endl;
-        //std::cout<<buffer<<std::endl;
         if (strcmp(buffer,disconnect_mess)==0) {
             break;
         }

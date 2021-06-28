@@ -18,8 +18,7 @@ enum class Message {
 
 struct Client {
     Client(int descriptor);
-    Client()=default;
-    uint32_t card_number;
+    int card_number;
     int descriptor;
     bool is_login;
 };

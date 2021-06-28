@@ -1,7 +1,7 @@
 #include "ATM.h"
 
 std::string ATM::Login(std::istringstream& str_stream, Client& client) {
-    uint32_t card_number;
+    int card_number;
     uint16_t pin;
     str_stream>>card_number>>pin;
     if (card_number==0 || pin==0) {
@@ -80,7 +80,7 @@ std::string ATM::ProcessRequest(std::string message, Client& client) {
     if (current_request==Request::help) {
         return db.Help();
     }
-
+    std::cout<<"is_login="<<client.is_login<<std::endl;
     if (!client.is_login) {
         if (current_request==Request::login) {
             return this->Login(str_stream, client);

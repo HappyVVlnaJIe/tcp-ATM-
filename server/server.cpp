@@ -7,7 +7,7 @@
 #include <thread>
 #include <errno.h>
 
-Client::Client(int descriptor) : descriptor(descriptor) {}
+Client::Client(int descriptor) : descriptor(descriptor), is_login(false) {}
 
 std::string Server::ServerMessage(Message message)
 {
@@ -102,8 +102,9 @@ void Server::Start()
             {
                 recv_message = this->Recv(it->descriptor);
             }
-            catch(const std::exception& e)
+            catch(const std::runtime_error& e)
             {
+                std::cout<<"Card number="<<it->card_number<<std::endl;
                 close(it->descriptor);
                 active_cards.erase(it->card_number);
                 it=clients.erase(it);
